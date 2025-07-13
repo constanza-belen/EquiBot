@@ -1,2 +1,2 @@
-# Equibot-sesgos
-Proyecto (en desarrollo) de detección de sesgos de género
+# equibot
+App (en desarrollo) de análisis de sesgos de género con BETO
