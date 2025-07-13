@@ -1,13 +1,12 @@
 from transformers import AutoTokenizer, AutoModelForSequenceClassification, pipeline
 import PyPDF2
-import os
 
-# Usar ruta relativa válida en Render
-model_dir = os.path.join(os.path.dirname(__file__), "modelo_beto_sesgo")
+# Nombre de tu modelo en Hugging Face
+model_name = "constanza-belen/Modelo_EquiBot"
 
-# Cargar modelo y tokenizer
-model = AutoModelForSequenceClassification.from_pretrained(model_dir)
-tokenizer = AutoTokenizer.from_pretrained(model_dir)
+# Cargar modelo y tokenizer desde Hugging Face
+model = AutoModelForSequenceClassification.from_pretrained(model_name)
+tokenizer = AutoTokenizer.from_pretrained(model_name)
 classifier = pipeline("text-classification", model=model, tokenizer=tokenizer)
 
 def analizar_equidad(file):
