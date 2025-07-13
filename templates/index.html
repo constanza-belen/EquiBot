@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>EquiB💜t - Analizador de Equidad</title>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Roboto', sans-serif;
+      text-align: center;
+      padding: 50px;
+      background-color: #f8f9fa;
+      color: #333;
+    }
+
+    .logo {
+      font-size: 2em;
+      font-weight: bold;
+      color: #1d3557;
+      margin-bottom: 10px;
+    }
+
+    .logo span {
+      color: #e63946;
+    }
+
+    .ines-logo {
+      width: 100px;
+      margin-top: 10px;
+    }
+
+    .subtitulo {
+      font-size: 1.1em;
+      color: #555;
+      margin-top: 5px;
+      margin-bottom: 20px;
+    }
+
+    .upload-box {
+      display: inline-block;
+      background-color: white;
+      padding: 40px;
+      border-radius: 10px;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+      max-width: 500px;
+      margin: auto;
+    }
+
+    h1 {
+      font-size: 2em;
+      margin-bottom: 10px;
+    }
+
+    p {
+      font-size: 1.2em;
+      margin-bottom: 30px;
+    }
+
+    input[type="file"] {
+      display: none;
+    }
+
+    .upload-label {
+      display: inline-block;
+      background-color: #5c3f91;
+      color: white;
+      font-size: 1.2em;
+      padding: 15px 30px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background-color 0.3s;
+      margin-top: 10px;
+      margin-right: 5px;
+    }
+
+    .upload-label:hover {
+      background-color: #d62828;
+    }
+
+    #resultado {
+      margin-top: 30px;
+      font-size: 1.3em;
+      font-weight: bold;
+      color: #1d3557;
+    }
+
+    .frase-educativa {
+      font-size: 0.9em;
+      color: #555;
+      margin-top: 15px;
+    }
+
+    textarea.drop-zone {
+      border: 2px dashed #ccc;
+      padding: 15px;
+      border-radius: 10px;
+      color: #333;
+      background: #fff;
+      width: 100%;
+      height: 120px;
+      resize: vertical;
+      font-size: 1em;
+      box-sizing: border-box;
+    }
+
+    .sobre-app {
+      margin-top: 30px;
+      cursor: pointer;
+      color: #1d3557;
+      text-decoration: underline;
+      font-size: 1em;
+    }
+
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 100;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      overflow: auto;
+      background-color: rgba(0,0,0,0.5);
+    }
+
+    .modal-contenido {
+      background-color: white;
+      margin: 10% auto;
+      padding: 20px;
+      border-radius: 10px;
+      max-width: 500px;
+      text-align: left;
+    }
+
+    .cerrar {
+      float: right;
+      font-size: 1.5em;
+      cursor: pointer;
+      color: #5c3f91;
+    }
+  </style>
+</head>
+<body>
+
+<div class="logo">EquiB<span>💜</span>t</div>
+<img src="{{ url_for('static', filename='Logotipo.png') }}" alt="Logo InES" class="ines-logo">
+
+<div class="subtitulo">Herramienta automática de análisis de equidad en textos</div>
+
+<div class="upload-box">
+  <h1>Analizar PDF por Equidad</h1>
+  <p>Sube tu documento en PDF o arrástralo aquí y te diremos el nivel de equidad de su contenido.</p>
+
+  <form id="formulario">
+    <textarea class="drop-zone" id="drop-zone" placeholder="Escribe tu texto aquí o arrastra un PDF"></textarea>
+    <input type="file" id="pdf" accept="application/pdf" />
+    <br>
+    <button type="button" class="upload-label" id="boton-subir">Seleccionar archivo PDF</button>
+    <button class="upload-label" type="submit">Analizar</button>
+  </form>
+
+  <p id="resultado"></p>
+  <div class="frase-educativa">
+    Para más información, contáctenos al correo contacto@equibot.cl
+  </div>
+</div>
+
+<div class="sobre-app" id="boton-info">Sobre esta app</div>
+
+<!-- Modal -->
+<div id="modal" class="modal">
+  <div class="modal-contenido">
+    <span class="cerrar" id="cerrar-modal">&times;</span>
+    <h2>Sobre esta app</h2>
+    <p><b>¿Quiénes la desarrollaron?</b><br>
+    Esta herramienta fue desarrollada por el equipo del proyecto InES Género, como un apoyo a la evaluación inicial de documentos en materia de equidad.</p>
+    <p><b>¿Qué hace el modelo?</b><br>
+    Analiza textos o PDFs y estima un porcentaje de equidad según patrones de lenguaje asociados a sesgos de género.</p>
+    <p><b>¿Cuáles son sus limitaciones?</b><br>
+    Este es un sistema automático y no reemplaza el juicio humano. Puede no detectar todos los sesgos y su interpretación requiere precaución.</p>
+  </div>
+</div>
+
+<script>
+const dropZone = document.getElementById('drop-zone');
+const pdfInput = document.getElementById('pdf');
+const botonSubir = document.getElementById('boton-subir');
+let archivoSeleccionado = null;
+
+botonSubir.addEventListener('click', () => pdfInput.click());
+
+dropZone.addEventListener('input', () => {
+  archivoSeleccionado = null; // Si escriben texto, ya no hay archivo
+});
+
+pdfInput.addEventListener('change', () => {
+  archivoSeleccionado = pdfInput.files[0];
+  if (archivoSeleccionado) {
+    dropZone.value = `Archivo seleccionado: ${archivoSeleccionado.name}`;
+  }
+});
+
+document.getElementById('formulario').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  document.getElementById('resultado').innerText = 'Analizando...';
+
+  if (archivoSeleccionado) {
+    const formData = new FormData();
+    formData.append('file', archivoSeleccionado);
+    const respuesta = await fetch('/subir_pdf', { method: 'POST', body: formData });
+    const datos = await respuesta.json();
+    if (datos.porcentaje !== undefined && datos.mensaje !== undefined) {
+      document.getElementById('resultado').innerHTML =
+        `Porcentaje de equidad: <b>${datos.porcentaje}%</b><br>${datos.mensaje}<br><br><i>Este análisis es un apoyo automático. Te recomendamos acompañarlo con revisión humana con enfoque de género.</i>`;
+    } else {
+      document.getElementById('resultado').innerText = 'Error en el análisis';
+    }
+  } else {
+    const texto = dropZone.value.trim();
+    if (!texto) {
+      document.getElementById('resultado').innerText = 'Por favor escribe un texto o sube un PDF.';
+      return;
+    }
+    const respuesta = await fetch('/analizar_texto', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({texto})
+    });
+    const datos = await respuesta.json();
+    if (datos.porcentaje !== undefined && datos.mensaje !== undefined) {
+      document.getElementById('resultado').innerHTML =
+        `Porcentaje de equidad: <b>${datos.porcentaje}%</b><br>${datos.mensaje}<br><br><i>Este análisis es un apoyo automático. Te recomendamos acompañarlo con revisión humana con enfoque de género.</i>`;
+    } else {
+      document.getElementById('resultado').innerText = 'Error en el análisis';
+    }
+  }
+});
+
+// Modal
+const modal = document.getElementById('modal');
+const botonInfo = document.getElementById('boton-info');
+const cerrarModal = document.getElementById('cerrar-modal');
+
+botonInfo.addEventListener('click', () => modal.style.display = 'block');
+cerrarModal.addEventListener('click', () => modal.style.display = 'none');
+window.addEventListener('click', (e) => {
+  if (e.target === modal) modal.style.display = 'none';
+});
+</script>
+
+</body>
+</html>
