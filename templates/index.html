@@ -183,71 +183,101 @@
 </div>
 
 <script>
-const dropZone = document.getElementById('drop-zone');
-const pdfInput = document.getElementById('pdf');
-const botonSubir = document.getElementById('boton-subir');
-let archivoSeleccionado = null;
-
-botonSubir.addEventListener('click', () => pdfInput.click());
-
-dropZone.addEventListener('input', () => {
-  archivoSeleccionado = null; // Si escriben texto, ya no hay archivo
-});
-
-pdfInput.addEventListener('change', () => {
-  archivoSeleccionado = pdfInput.files[0];
-  if (archivoSeleccionado) {
-    dropZone.value = `Archivo seleccionado: ${archivoSeleccionado.name}`;
-  }
-});
-
-document.getElementById('formulario').addEventListener('submit', async (e) => {
-  e.preventDefault();
-  document.getElementById('resultado').innerText = 'Analizando...';
-
-  if (archivoSeleccionado) {
-    const formData = new FormData();
-    formData.append('file', archivoSeleccionado);
-    const respuesta = await fetch('/subir_pdf', { method: 'POST', body: formData });
-    const datos = await respuesta.json();
-    if (datos.porcentaje !== undefined && datos.mensaje !== undefined) {
-      document.getElementById('resultado').innerHTML =
-        `Porcentaje de equidad: <b>${datos.porcentaje}%</b><br>${datos.mensaje}<br><br><i>Este análisis es un apoyo automático. Te recomendamos acompañarlo con revisión humana con enfoque de género.</i>`;
+  const dropZone = document.getElementById('drop-zone');
+  const pdfInput = document.getElementById('pdf');
+  const botonSubir = document.getElementById('boton-subir');
+  let archivoSeleccionado = null;
+  
+  // Botón seleccionar archivo
+  botonSubir.addEventListener('click', () => pdfInput.click());
+  
+  // Si se escribe texto manual, eliminamos archivo anterior
+  dropZone.addEventListener('input', () => {
+    archivoSeleccionado = null;
+  });
+  
+  // Si se selecciona archivo desde el botón
+  pdfInput.addEventListener('change', () => {
+    archivoSeleccionado = pdfInput.files[0];
+    if (archivoSeleccionado) {
+      dropZone.value = `Archivo seleccionado: ${archivoSeleccionado.name}`;
+    }
+  });
+  
+  // --------- DRAG AND DROP PDF SOBRE EL TEXTAREA ---------
+  dropZone.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    dropZone.style.borderColor = '#e63946';
+  });
+  
+  dropZone.addEventListener('dragleave', (e) => {
+    e.preventDefault();
+    dropZone.style.borderColor = '#ccc';
+  });
+  
+  dropZone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    dropZone.style.borderColor = '#ccc';
+  
+    const archivos = e.dataTransfer.files;
+    if (archivos.length > 0 && archivos[0].type === 'application/pdf') {
+      archivoSeleccionado = archivos[0];
+      dropZone.value = `Archivo seleccionado: ${archivoSeleccionado.name}`;
     } else {
-      document.getElementById('resultado').innerText = 'Error en el análisis';
+      archivoSeleccionado = null;
+      dropZone.value = 'Archivo no válido. Solo PDF o texto.';
     }
-  } else {
-    const texto = dropZone.value.trim();
-    if (!texto) {
-      document.getElementById('resultado').innerText = 'Por favor escribe un texto o sube un PDF.';
-      return;
-    }
-    const respuesta = await fetch('/analizar_texto', {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({texto})
-    });
-    const datos = await respuesta.json();
-    if (datos.porcentaje !== undefined && datos.mensaje !== undefined) {
-      document.getElementById('resultado').innerHTML =
-        `Porcentaje de equidad: <b>${datos.porcentaje}%</b><br>${datos.mensaje}<br><br><i>Este análisis es un apoyo automático. Te recomendamos acompañarlo con revisión humana con enfoque de género.</i>`;
+  });
+  
+  // --------- SUBMIT: Enviar texto o archivo ---------
+  document.getElementById('formulario').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    document.getElementById('resultado').innerText = 'Analizando...';
+  
+    if (archivoSeleccionado) {
+      const formData = new FormData();
+      formData.append('file', archivoSeleccionado);
+      const respuesta = await fetch('/subir_pdf', { method: 'POST', body: formData });
+      const datos = await respuesta.json();
+      if (datos.porcentaje !== undefined && datos.mensaje !== undefined) {
+        document.getElementById('resultado').innerHTML =
+          `Porcentaje de equidad: <b>${datos.porcentaje}%</b><br>${datos.mensaje}<br><br><i>Este análisis es un apoyo automático. Te recomendamos acompañarlo con revisión humana con enfoque de género.</i>`;
+      } else {
+        document.getElementById('resultado').innerText = 'Error en el análisis';
+      }
     } else {
-      document.getElementById('resultado').innerText = 'Error en el análisis';
+      const texto = dropZone.value.trim();
+      if (!texto) {
+        document.getElementById('resultado').innerText = 'Por favor escribe un texto o sube un PDF.';
+        return;
+      }
+      const respuesta = await fetch('/analizar_texto', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ texto })
+      });
+      const datos = await respuesta.json();
+      if (datos.porcentaje !== undefined && datos.mensaje !== undefined) {
+        document.getElementById('resultado').innerHTML =
+          `Porcentaje de equidad: <b>${datos.porcentaje}%</b><br>${datos.mensaje}<br><br><i>Este análisis es un apoyo automático. Te recomendamos acompañarlo con revisión humana con enfoque de género.</i>`;
+      } else {
+        document.getElementById('resultado').innerText = 'Error en el análisis';
+      }
     }
-  }
-});
-
-// Modal
-const modal = document.getElementById('modal');
-const botonInfo = document.getElementById('boton-info');
-const cerrarModal = document.getElementById('cerrar-modal');
-
-botonInfo.addEventListener('click', () => modal.style.display = 'block');
-cerrarModal.addEventListener('click', () => modal.style.display = 'none');
-window.addEventListener('click', (e) => {
-  if (e.target === modal) modal.style.display = 'none';
-});
-</script>
+  });
+  
+  // Modal
+  const modal = document.getElementById('modal');
+  const botonInfo = document.getElementById('boton-info');
+  const cerrarModal = document.getElementById('cerrar-modal');
+  
+  botonInfo.addEventListener('click', () => modal.style.display = 'block');
+  cerrarModal.addEventListener('click', () => modal.style.display = 'none');
+  window.addEventListener('click', (e) => {
+    if (e.target === modal) modal.style.display = 'none';
+  });
+  </script>
+  
 
 </body>
 </html>
